@@ -43,11 +43,7 @@ if (typeof WebAssembly !== 'object') {
 // Wasm globals
 
 var wasmMemory;
-
-// In fastcomp asm.js, we don't need a wasm Table at all.
-// In the wasm backend, we polyfill the WebAssembly object,
-// so this creates a (non-native-wasm) table for us.
-#include "runtime_init_table.js"
+var wasmTable;
 
 #if USE_PTHREADS
 // For sending to workers.
@@ -359,6 +355,7 @@ assert(!Module['wasmMemory']);
 #else // !STANDALONE_WASM
 // In non-standalone/normal mode, we create the memory here.
 #include "runtime_init_memory.js"
+#include "runtime_init_table.js"
 #endif // !STANDALONE_WASM
 
 #include "runtime_stack_check.js"
@@ -834,6 +831,11 @@ function createWasm() {
     var exports = instance.exports;
 #if RELOCATABLE
     exports = relocateExports(exports, GLOBAL_BASE);
+#else
+    wasmTable = exports['__indirect_function_table'];
+#if ASSERTIONS
+    assert(wasmTable, "table not found in wasm exports");
+#endif
 #endif
 #if ASYNCIFY
     exports = Asyncify.instrumentWasmExports(exports);
@@ -852,7 +854,9 @@ function createWasm() {
     // then exported.
     // TODO: do not create a Memory earlier in JS
     wasmMemory = exports['memory'];
-    wasmTable = exports['__indirect_function_table'];
+#if ASSERTIONS
+    assert(wasmMemory, "memory not found in wasm exports");
+#endif
     updateGlobalBufferAndViews(wasmMemory.buffer);
 #if ASSERTIONS
     writeStackCookie();

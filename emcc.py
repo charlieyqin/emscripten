@@ -2687,8 +2687,6 @@ def do_binaryen(target, options, wasm_target):
     # We do not currently have a setup to preprocess {{{ }}} settings in user scripts, so manually
     # expand the settings that wasm2js.js actually uses.
     wasm2js = wasm2js.replace('{{{ WASM_PAGE_SIZE }}}', '65536')
-    for opt in ['WASM_TABLE_SIZE']:
-      wasm2js = wasm2js.replace("{{{ getQuoted('%s') }}}" % opt, str(shared.Settings.get(opt)))
     return wasm2js
 
   def run_closure_compiler():
